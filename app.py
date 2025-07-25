@@ -1,60 +1,78 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
 import joblib
 
-# Load saved model and scaler
-model = joblib.load("hybrid_rf_model.pkl")
-scaler = joblib.load("scaler.pkl")
+# Load trained model and scaler
+model = joblib.load("hybrid_model.pkl")
+scaler = joblib.load("hybrid_scaler.pkl")
 
 st.title("🫀 Heart Attack Risk Prediction App")
-st.markdown("This app predicts the risk of heart attack using hybrid graph and clinical features.")
+st.markdown("This app predicts the risk of heart attack using **hybrid graph and clinical features**.")
 
 st.header("📋 Enter Patient Clinical Information:")
 
-# Input fields
-age = st.number_input("Age (years)", 20, 100, 55)
+# Clinical Inputs
+age = st.number_input("Age (years)", 20, 100, 50)
 sex = st.selectbox("Sex", ["Male", "Female"])
+sex_val = 1 if sex == "Male" else 0
+
 systolic_bp = st.number_input("Systolic Blood Pressure (mm Hg)", 80, 250, 120)
-diastolic_bp = st.number_input("Diastolic Blood Pressure (mm Hg)", 60, 200, 80)
+diastolic_bp = st.number_input("Diastolic Blood Pressure (mm Hg)", 50, 150, 80)
+
 chol = st.number_input("Serum Cholesterol (mg/dL)", 100, 600, 200)
 fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dL", ["Yes", "No"])
-cp = st.selectbox("Chest Pain Type", ["Typical Angina", "Atypical Angina", "Non-anginal", "Asymptomatic"])
-exang = st.selectbox("Exercise Induced Angina", ["Yes", "No"])
-thalachh = st.number_input("Max Heart Rate Achieved", 60, 250, 150)
-oldpeak = st.number_input("ST Depression", 0.0, 10.0, 1.0, step=0.1)
-slope = st.selectbox("Slope of ST Segment", ["Upsloping", "Flat", "Downsloping"])
-restecg = st.selectbox("Resting ECG", ["Normal", "ST-T Abnormality", "Left Ventricular Hypertrophy"])
-ca = st.selectbox("Major Vessels Colored", [0, 1, 2, 3])
-thal = st.selectbox("Thalassemia", ["Normal", "Fixed Defect", "Reversible Defect"])
-
-# Encode inputs manually (same as in dataset)
-sex_val = 1 if sex == "Male" else 0
 fbs_val = 1 if fbs == "Yes" else 0
-cp_val = {"Typical Angina": 0, "Atypical Angina": 1, "Non-anginal": 2, "Asymptomatic": 3}[cp]
+
+cp = st.selectbox("Chest Pain Type", ["Typical Angina", "Atypical Angina", "Non-Anginal", "Asymptomatic"])
+cp_val = ["Typical Angina", "Atypical Angina", "Non-Anginal", "Asymptomatic"].index(cp)
+
+exang = st.selectbox("Exercise Induced Angina", ["Yes", "No"])
 exang_val = 1 if exang == "Yes" else 0
-slope_val = {"Upsloping": 0, "Flat": 1, "Downsloping": 2}[slope]
-restecg_val = {"Normal": 0, "ST-T Abnormality": 1, "Left Ventricular Hypertrophy": 2}[restecg]
-thal_val = {"Normal": 1, "Fixed Defect": 2, "Reversible Defect": 3}[thal]
 
-# Create input array
-input_data = np.array([[sex_val, restecg_val, ca, systolic_bp, thal_val,
-                        fbs_val, cp_val, thalachh, slope_val, age, chol, oldpeak]])
+thalachh = st.number_input("Max Heart Rate Achieved", 60, 220, 150)
+oldpeak = st.number_input("ST Depression", 0.0, 6.0, 1.0)
 
-# Scale input
-input_scaled = scaler.transform(input_data)
+slope = st.selectbox("Slope of ST Segment", ["Upsloping", "Flat", "Downsloping"])
+slope_val = ["Upsloping", "Flat", "Downsloping"].index(slope)
 
-# Predict
-if st.button("🔍 Predict"):
-    prob = model.predict_proba(input_scaled)[0][1]
-    label = "High" if prob >= 0.5 else "Low"
+restecg = st.selectbox("Resting ECG", ["Normal", "ST-T Abnormality", "Left Ventricular Hypertrophy"])
+restecg_val = ["Normal", "ST-T Abnormality", "Left Ventricular Hypertrophy"].index(restecg)
+
+ca = st.slider("Major Vessels Colored", 0, 4, 0)
+
+thal = st.selectbox("Thalassemia", ["Normal", "Fixed Defect", "Reversible Defect"])
+thal_val = ["Normal", "Fixed Defect", "Reversible Defect"].index(thal)
+
+# Graph-based Features - Use defaults or allow user to tweak
+st.subheader("📊 Graph Intelligence Features (Optional, use defaults if unsure)")
+
+pageRank = st.number_input("PageRank", 0.0, 1.0, 0.12)
+betweenness = st.number_input("Betweenness Centrality", 0.0, 1.0, 0.08)
+community = st.number_input("Community ID", 0, 10, 2)
+degree = st.number_input("Node Degree", 0, 20, 4)
+eigenvector = st.number_input("Eigenvector Centrality", 0.0, 1.0, 0.09)
+avgSimilarity = st.number_input("Average Node Similarity", 0.0, 1.0, 0.16)
+
+if st.button("🔮 Predict"):
+    input_data = np.array([[
+        age, sex_val, systolic_bp, diastolic_bp, chol, fbs_val, cp_val, exang_val,
+        thalachh, oldpeak, slope_val, restecg_val, ca, thal_val,
+        pageRank, betweenness, community, degree, eigenvector, avgSimilarity
+    ]])
+
+    input_scaled = scaler.transform(input_data)
+    prediction = model.predict(input_scaled)[0]
+    probability = model.predict_proba(input_scaled)[0][1]
+
     st.subheader("🧾 Prediction Result:")
-    st.success(f"✅ {label} Risk of Heart Attack ({prob*100:.2f}% probability)")
-    
-    st.markdown("### 🔎 Entered Data")
-    st.json({
-        "Age": age, "Sex": sex, "Systolic BP": systolic_bp, "Diastolic BP": diastolic_bp,
-        "Cholesterol": chol, "FBS >120": fbs, "Chest Pain": cp, "Exang": exang,
-        "Max Heart Rate": thalachh, "Oldpeak": oldpeak, "Slope": slope,
-        "Rest ECG": restecg, "Vessels Colored": ca, "Thalassemia": thal
-    })
+    risk_label = "✅ Low Risk of Heart Attack" if prediction == 0 else "⚠️ High Risk of Heart Attack"
+    st.success(f"{risk_label} ({probability * 100:.2f}% probability)")
+
+    st.subheader("🔎 Entered Data")
+    st.write(dict(
+        age=age, sex=sex, systolic_bp=systolic_bp, diastolic_bp=diastolic_bp,
+        chol=chol, fbs=fbs, cp=cp, exang=exang, thalachh=thalachh, oldpeak=oldpeak,
+        slope=slope, restecg=restecg, ca=ca, thal=thal,
+        pageRank=pageRank, betweenness=betweenness, community=community,
+        degree=degree, eigenvector=eigenvector, avgSimilarity=avgSimilarity
+    ))
