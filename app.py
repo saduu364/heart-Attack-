@@ -3,8 +3,8 @@ import numpy as np
 import joblib
 
 # Load trained model and scaler
-model = joblib.load("hybrid_model.pkl")
-scaler = joblib.load("hybrid_scaler.pkl")
+model = joblib.load("hybrid_rf_model.pkl")
+scaler = joblib.load("scaler.pkl")
 
 st.title("🫀 Heart Attack Risk Prediction App")
 st.markdown("This app predicts the risk of heart attack using **hybrid graph and clinical features**.")
