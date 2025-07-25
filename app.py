@@ -1,14 +1,14 @@
-# app.py
+
 
 import streamlit as st
 import pickle
 import numpy as np
 
 # Load model, scaler, and feature names
-with open("random_forest_model.pkl", "rb") as f:
+with open("mlp_model.pkl") as f:
     model = pickle.load(f)
 
-with open("scaler.pkl", "rb") as f:
+with open("scaler.pkl") as f:
     scaler = pickle.load(f)
 
 # Clinical feature names in correct order
