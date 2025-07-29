@@ -44,7 +44,7 @@ if st.button("Predict"):
     input_data = pd.DataFrame([[
         age, sex, cp, trestbps, chol, fbs, restecg, thalachh,
         exang, oldpeak, slope, ca, thal
-    ]], columns=["age", "sex", "cp", "trestbps", "chol", "fbs",
+    ]], columns=["age", "sex", "cp", "systolic_bp","diastolic_bp", "chol", "fbs",
                  "restecg", "thalachh", "exang", "oldpeak", "slope",
                  "ca", "thal"])
 
